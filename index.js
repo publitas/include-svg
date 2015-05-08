@@ -8,7 +8,7 @@ module.exports = function(dirPath) {
   var stream = through();
   rd.read(dirPath, 'utf8', true, function(err, contents) {
     if (err) {
-      return stream.push('{}');
+      throw err;
     }
     stream.push('{');
     optimize(contents, stream, function() {
