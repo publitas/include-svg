@@ -2,61 +2,43 @@ var rd = require('read-dir-files');
 var through = require('through2');
 var SVG = require('svgo');
 var path = require('path');
-var traverse = require('traverse');
+var fs = require('fs');
+var svg = new SVG();
 
 module.exports = function(dirPath) {
   var stream = through();
-  rd.read(dirPath, 'utf8', true, function(err, contents) {
-    if (err) {
-      throw err;
-    }
-    stream.push('{');
-    optimize(contents, stream, function() {
-      stream.push('}');
-      stream.push(null);
+  var first = true;
+  var done = false;
+  var processing = 0;
+
+  rd.list(dirPath)
+    .on('error', function(err) { throw err; })
+    .on('end', function() { done = true; })
+    .on('file', function(filePath) {
+      if (path.extname(filePath) !== '.svg') return;
+      processing++;
+
+      optimize(filePath, function(res) {
+        var key = path.relative(dirPath, filePath).replace(/\.svg$/, '');
+
+        stream.push(first ? '{' : ',');
+        stream.push('"'+key+'": '+JSON.stringify(res.data));
+        first = false;
+        processing--;
+
+        if (processing === 0 && done) {
+          stream.push('}');
+          stream.push(null);
+        }
+      });
     });
-  });
 
   return stream;
 };
 
-function optimize(contents, stream, callback) {
-  var svg = new SVG();
-  var files = traverse(contents);
-  var filePaths = files.paths();
-  var visited = 0;
-  var first = true;
-
-  function checkDone() {
-    visited++;
-    if (visited === filePaths.length) callback();
-  }
-
-  filePaths.forEach(function(filePath) {
-    var fileName = filePath[filePath.length-1];
-    var keyName;
-
-    if (path.extname(fileName) === '.svg') {
-      keyName = keyNameForPath(filePath);
-
-      svg.optimize(files.get(filePath), function(res) {
-        if (!first) stream.push(',\n'); first = false;
-
-        stream.push('"'+keyName+'": '+JSON.stringify(res.data));
-        checkDone();
-      });
-    } else {
-      checkDone();
-    }
+function optimize(filePath, callback) {
+  fs.readFile(filePath, function(err, content) {
+    if (err) throw err;
+    svg.optimize(content.toString(), callback);
   });
-
-  function keyNameForPath(filePath) {
-    var fileName = filePath[filePath.length-1];
-
-    return filePath
-      .slice(0, -1)
-      .concat(path.basename(fileName, '.svg'))
-      .join('/');
-  }
 }
-

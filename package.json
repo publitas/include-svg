@@ -4,14 +4,16 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "node_modules/tap/bin/run.js test/*.js"
   },
   "author": "Felix Hageloh",
   "license": "MIT",
   "dependencies": {
     "read-dir-files": "^0.1.1",
     "svgo": "^0.5.1",
-    "through2": "^0.6.5",
-    "traverse": "^0.6.6"
+    "through2": "^0.6.5"
+  },
+  "devDependencies": {
+    "tap": "^1.0.2"
   }
 }
