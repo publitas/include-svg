@@ -1,6 +1,6 @@
 # Include SVG
 
-## This is WIP!
+### This is WIP!
 
 Get all svg files in a (nested) folder as a javascript object. Uses [SVGO](https://github.com/svg/svgo) to optimize the files first.
 
